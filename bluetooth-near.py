@@ -37,6 +37,8 @@
 #      https://stackoverflow.com/questions/36399927/distance-calculation-from-rssi-ble-android
 #      here https://python-forum.io/Thread-Python-Ble-Distance-Problem
 
+# TODO lock if bt is gone
+
 import time
 import bluetooth
 # noinspection PyProtectedMember
@@ -275,11 +277,12 @@ def _main():
     scan_period = 1
     # The command to run when the device is out of range
     # noinspection PyPep8
-    run_xscreensaver_if_killed = '(xscreensaver-command --time 2>&1|grep -q "no screensaver is running" && xscreensaver &)'
-    if_bt_gone = run_xscreensaver_if_killed + '; xscreensaver-command -lock'
+    #run_xscreensaver_if_killed = '(xscreensaver-command --time 2>&1|grep -q "no screensaver is running" && xscreensaver &)'
+    run_xscreensaver_if_killed = '(/usr/bin/killall gsd-screensaver-proxy; /usr/libexec/gsd-screensaver-proxy &)'
+    if_bt_gone = run_xscreensaver_if_killed + '; /usr/bin/loginctl lock-session'
     # The command to run when the device is back in range
     # noinspection PyPep8
-    if_bt_back = '(xscreensaver-command -time 2>&1|grep -q "screen non-blanked since" && xscreensaver-command -deactivate || killall xscreensaver); ' + run_xscreensaver_if_killed
+    if_bt_back = '(/usr/bin/loginctl unlock-session)'
 
     max_missed = 3
     max_distance_in_cm = 90.0
@@ -303,7 +306,7 @@ def _main():
 
         # first scan to ensure bluetooth works
         nearby_devices = bluetooth.discover_devices(duration=8, lookup_names=True, flush_cache=True, lookup_class=False)
-        print("found %d devices" % len(nearby_devices))
+        print("Found %d devices" % len(nearby_devices))
 
         print("performing inquiry...")
         # initial check, see if mentioned BT device active. If it's not, clean exit
